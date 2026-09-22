@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b1018">
+<title>Grid Tactical Defense — Power Network</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap');
+:root{--bg:#0b1018;--panel:#111827e8;--line:#253247;--text:#d8dee9;--muted:#7c8799;--cyan:#38bdf8;--green:#22c55e;--yellow:#facc15;--orange:#fb923c;--red:#ef4444}
+*{box-sizing:border-box;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 15%,#1a2331 0,#0b1018 55%,#070a10 100%);color:var(--text);font-family:'JetBrains Mono',monospace}
+body{display:flex;justify-content:center;align-items:center}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+#game-wrapper{position:relative;width:100vw;height:100vh;max-width:520px;max-height:920px;overflow:hidden;background:#0d1118;box-shadow:0 0 40px #000}
+canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;background:#111722}
+.overlay{position:absolute;inset:0;pointer-events:none}
+.hud{position:absolute;left:8px;right:8px;top:8px;z-index:20;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.hud-row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.stats{display:flex;gap:6px;pointer-events:auto}
+.chip,.hud-btn{background:#05080dcc;border:1px solid #ffffff18;border-radius:7px;padding:5px 8px;box-shadow:0 4px 12px #0007;backdrop-filter:blur(4px);font-size:11px;font-weight:800}
+.chip span{vertical-align:middle}.chip.coin{color:#f5f5f5}.chip.gem{color:#67e8f9}.chip.hp{color:#fda4af}
+.timebox{flex:1;max-width:220px;background:#05080dcc;border:1px solid #ffffff18;border-radius:7px;padding:4px 7px;backdrop-filter:blur(4px);pointer-events:auto}
+.time-label{display:flex;justify-content:space-between;font-size:9px;margin-bottom:2px}.phase{color:#fbbf24}
+.bar{height:7px;border-radius:99px;background:#1f2937;border:1px solid #374151;overflow:hidden;position:relative}.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#f59e0b,#fb923c,#6366f1);transition:width .12s linear}.pin{position:absolute;top:0;width:2px;height:100%;background:#fff;box-shadow:0 0 5px #fff}
+.controls{display:flex;justify-content:space-between;pointer-events:auto}.control-group{display:flex;gap:5px}.hud-btn{padding:5px 9px;background:#05080de6}.hud-btn.active{border-color:#38bdf8;box-shadow:0 0 10px #38bdf855}.hud-btn:active{transform:translateY(1px)}
+#hotbar{position:absolute;left:7px;top:132px;z-index:21;display:flex;flex-direction:column;gap:6px;pointer-events:auto}.slot{width:54px;min-height:56px;padding:5px 3px;border:1px solid #ffffff20;border-radius:8px;background:#111827dd;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:0 4px 15px #0008;backdrop-filter:blur(4px);transition:.15s}.slot .icon{font-size:19px;line-height:20px}.slot .key{font-size:8px;color:#9ca3af}.slot .cost{font-size:8px;color:#facc15}.slot.active{border-color:#38bdf8;box-shadow:0 0 13px #38bdf866;background:#0e2a3add}.slot.disabled{opacity:.45;filter:grayscale(1)}
+.bottom{position:absolute;left:8px;right:8px;bottom:7px;z-index:21;display:flex;align-items:flex-end;justify-content:space-between;pointer-events:none}.tips{font-size:8px;color:#64748b;background:#020617aa;padding:4px 6px;border:1px solid #ffffff10;border-radius:5px}.build-info{max-width:230px;text-align:right;background:#020617cc;border:1px solid #ffffff14;border-radius:6px;padding:5px 7px;font-size:8px;color:#cbd5e1;min-height:28px}.build-info strong{color:#fff}
+#message{position:absolute;top:86px;left:50%;transform:translateX(-50%) translateY(-8px);z-index:35;opacity:0;background:#020617e8;border:1px solid #334155;border-radius:7px;padding:6px 10px;font-size:10px;color:#e2e8f0;transition:.25s;pointer-events:none;text-align:center;white-space:nowrap}
+#modal{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;padding:22px;background:#000b;backdrop-filter:blur(6px)}
+.modal-card{width:min(360px,92%);background:linear-gradient(180deg,#111827,#0b111b);border:1px solid #334155;border-radius:12px;padding:22px;text-align:center;box-shadow:0 15px 50px #000}
+.modal-card h2{margin:0 0 6px;font-size:24px;letter-spacing:1px}.modal-card p{margin:0 0 16px;color:#94a3b8;font-size:11px;line-height:1.7}.modal-actions{display:flex;gap:7px;justify-content:center}.main-btn{padding:9px 15px;border-radius:7px;border:1px solid #60a5fa66;background:#2563eb;color:white;font-weight:800;font-size:11px}.ghost-btn{padding:9px 15px;border-radius:7px;border:1px solid #ffffff15;background:#0f172a;color:#cbd5e1;font-weight:800;font-size:11px}
+#menu-panel,#map-panel{position:absolute;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:#020617cc;backdrop-filter:blur(5px);padding:18px}.panel-card{width:min(380px,94%);background:#0f1724;border:1px solid #334155;border-radius:11px;padding:16px;box-shadow:0 10px 40px #000}.panel-card h3{margin:0 0 12px;font-size:14px}.panel-card p,.panel-card li{font-size:10px;line-height:1.7;color:#9ca3af}.panel-card ul{padding-left:18px}.close{float:right;background:#111827;border:1px solid #ffffff14;border-radius:6px;padding:4px 8px;font-size:9px}
+#mapCanvas{width:100%;height:250px;background:#0a0f16;border:1px solid #253247;border-radius:8px;margin-top:8px}
+.toast-good{border-color:#22c55e66!important;color:#bbf7d0!important}.toast-bad{border-color:#ef444466!important;color:#fecaca!important}
+@media(max-height:680px){#hotbar{top:108px}.slot{width:48px;min-height:49px}.slot .icon{font-size:16px}.chip,.hud-btn{font-size:10px;padding:4px 6px}.bottom{bottom:4px}.build-info{display:none}}
+.save-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.save-actions button{flex:1;min-width:90px}
+</style>
+</head>
+<body>
+<div id="game-wrapper">
+<canvas id="gameCanvas"></canvas>
+<div class="hud">
+ <div class="hud-row">
+  <div class="stats">
+   <div class="chip coin">🪙 <span id="ui-coins">150</span></div>
+   <div class="chip gem">💎 <span id="ui-gems">10</span></div>
+   <div class="chip hp">❤ <span id="ui-hp">100/100</span></div>
+  </div>
+  <div class="timebox">
+   <div class="time-label"><span id="ui-day">DAY 1</span><span id="ui-phase" class="phase">DAWN</span></div>
+   <div class="bar"><i id="ui-bar"></i><b id="ui-pin" class="pin"></b></div>
+  </div>
+ </div>
+ <div class="controls">
+  <button id="btn-speed" class="hud-btn">▶ x1</button>
+  <div class="control-group">
+   <button id="btn-pause" class="hud-btn">Ⅱ</button>
+   <button id="btn-menu" class="hud-btn">☰</button>
+   <button id="btn-map" class="hud-btn">MAP</button>
+  </div>
+ </div>
+</div>
+<div id="hotbar"></div>
+<div class="bottom"><div class="tips">แตะช่อง 1–4 แล้วแตะพื้นเพื่อสร้าง • แตะกลางสิ่งปลูกสร้างเพื่อเลือก</div><div id="build-info" class="build-info"></div></div>
+<div id="message"></div>
+<div id="modal"><div class="modal-card"><h2 id="modal-title">CORE DESTROYED</h2><p id="modal-desc"></p><div class="modal-actions"><button id="restart" class="main-btn">RESTART</button><button id="modal-map" class="ghost-btn">SHOW MAP</button></div></div></div>
+<div id="menu-panel"><div class="panel-card"><button class="close" id="close-menu">CLOSE</button><h3>TACTICAL MENU</h3><p>เป้าหมาย: ป้องกัน Power Core ให้รอดให้นานที่สุด</p><ul><li>1/2/3/4 หรือปุ่มด้านซ้าย: เลือกอาคาร</li><li>คลิก/แตะช่องพื้น: วางอาคาร</li><li>คลิก/แตะอาคาร: ดู HP และสถานะพลังงาน</li><li>ESC: ยกเลิกการเลือก / ปิดเมนู</li></ul><p>Power Transmitter จะส่งพลังงานต่อจาก Core หรือโหนดที่เชื่อมถึงกัน ทำให้ขยายแนวป้องกันได้ไกลขึ้น</p><div class="save-actions"><button id="save-game" class="main-btn">SAVE</button><button id="load-game" class="ghost-btn">LOAD</button><button id="new-game" class="ghost-btn">NEW GAME</button></div><small id="save-status" style="display:block;margin-top:10px;color:#94a3b8">Auto Save: พร้อม</small></div></div>
+<div id="map-panel"><div class="panel-card"><button class="close" id="close-map">CLOSE</button><h3>TACTICAL MAP</h3><canvas id="mapCanvas"></canvas><p id="map-stats"></p></div></div>
+</div>
+<script>
+'use strict';
+const canvas=document.getElementById('gameCanvas'),ctx=canvas.getContext('2d');
+const mapCanvas=document.getElementById('mapCanvas'),mctx=mapCanvas.getContext('2d');
+const COLS=16,ROWS=28;
+let tileSize=20,ox=0,oy=0,dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+const corePos={r:25,c:8};
+const AudioFX={ctx:null,init(){try{if(!this.ctx)this.ctx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}},tone(f,t,d,v=.05){if(!this.ctx)return;try{const o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=t;o.frequency.setValueAtTime(f,this.ctx.currentTime);g.gain.setValueAtTime(v,this.ctx.currentTime);g.gain.exponentialRampToValueAtTime(.0001,this.ctx.currentTime+d);o.connect(g);g.connect(this.ctx.destination);o.start();o.stop(this.ctx.currentTime+d)}catch(e){}},build(){this.tone(260,'sine',.09,.06)},shoot(){this.tone(520,'square',.045,.025)},hit(){this.tone(110,'sawtooth',.05,.03)},coin(){this.tone(760,'sine',.08,.04)},power(){this.tone(920,'sine',.16,.045)}};
+const state={coins:150,gems:10,day:1,dayTime:0,dayDuration:950,isNight:false,speed:1,paused:false,gameOver:false,wave:0,waveTimer:0,spawnTimer:0,score:0,kills:0,selectedSlot:0,selectedBuilding:null,hover:{r:-1,c:-1},coreHP:100,maxCoreHP:100};
+const BUILDINGS=[
+{id:'archer',key:'1',name:'Archer Tower',cost:100,hp:80,symbol:'🏹',color:'#38bdf8',type:'attack',range:4.2,damage:8,cooldown:38,requiresPower:true,desc:'ยิงเร็ว เหมาะกับเป้าหมายทั่วไป'},
+{id:'miner',key:'2',name:'Coin Generator',cost:50,hp:55,symbol:'$',color:'#facc15',type:'economy',income:5,cooldown:140,requiresPower:true,desc:'สร้างเหรียญเมื่อมีพลังงาน'},
+{id:'transmitter',key:'3',name:'Power Transmitter',cost:30,hp:45,symbol:'⚡',color:'#22c55e',type:'power',powerRadius:4.6,requiresPower:false,desc:'ขยายกริดพลังงานจากโหนดที่เชื่อมถึงกัน'},
+{id:'ballista',key:'4',name:'Ballista',cost:150,hp:130,symbol:'🎯',color:'#fb923c',type:'attack',range:6.4,damage:34,cooldown:88,requiresPower:true,desc:'ยิงช้าแต่แรง ระยะไกล'}
+];
+const grid=[],powerGrid=[],enemies=[],projectiles=[],particles=[],texts=[],paths=new Map();
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function rand(a,b){return a+Math.random()*(b-a)}
+function cellKey(r,c){return r+','+c}
+function inside(r,c){return r>=0&&r<ROWS&&c>=0&&c<COLS}
+function walkable(r,c){if(!inside(r,c))return false;const t=grid[r][c];return t.type===0 || t.type===3}
+function resize(){const w=document.getElementById('game-wrapper').clientWidth,h=document.getElementById('game-wrapper').clientHeight;canvas.width=Math.floor(w*dpr);canvas.height=Math.floor(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);tileSize=Math.min(w/COLS,(h-120)/ROWS);ox=(w-COLS*tileSize)/2;oy=36;}
+window.addEventListener('resize',resize);
+function makeGrid(){grid.length=0;powerGrid.length=0;for(let r=0;r<ROWS;r++){grid[r]=[];powerGrid[r]=[];for(let c=0;c<COLS;c++){let type=0;if(r===corePos.r&&c===corePos.c)type=3;else if((r<5&&(c<4||c>11))||(r>=13&&r<=20&&(c<3||c>12)))type=1;else if((r>=6&&r<=11&&(c<2||c>13)))type=2;else if(Math.random()<.09&&(c<2||c>13||r<4))type=1;grid[r][c]={type,building:null};powerGrid[r][c]=false;}}grid[corePos.r][corePos.c].building={id:'core',name:'Power Core',symbol:'☀️',type:'core',powerRadius:3.6,hp:state.maxCoreHP,maxHp:state.maxCoreHP,requiresPower:false,isPowered:true};grid[22][7].building=createInstance(BUILDINGS[0]);grid[22][10].building=createInstance(BUILDINGS[1]);grid[23][9].building=createInstance(BUILDINGS[1]);recalcPower();}
+function createInstance(def){return {...def,timer:0,isPowered:false,maxHp:def.hp,hp:def.hp}}
+function recalcPower(){for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)powerGrid[r][c]=false;const sources=[];sources.push({r:corePos.r,c:corePos.c,radius:3.6});
+ // Transmitters only activate if they are within power coverage of a previously active source. Repeat until stable.
+ let changed=true;const active=new Set([cellKey(corePos.r,corePos.c)]);
+ while(changed){changed=false;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const b=grid[r][c].building;if(!b||b.type!=='power'||active.has(cellKey(r,c)))continue;for(const s of sources){if(Math.hypot(r-s.r,c-s.c)<=s.radius){active.add(cellKey(r,c));sources.push({r,c,radius:b.powerRadius});changed=true;break}}}}
+ for(const s of sources){const rr=Math.ceil(s.radius);for(let r=Math.max(0,s.r-rr);r<=Math.min(ROWS-1,s.r+rr);r++)for(let c=Math.max(0,s.c-rr);c<=Math.min(COLS-1,s.c+rr);c++)if(Math.hypot(r-s.r,c-s.c)<=s.radius)powerGrid[r][c]=true;}
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const b=grid[r][c].building;if(b)b.isPowered=!b.requiresPower||powerGrid[r][c];}}
+function neighbors(r,c){return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([rr,cc])=>walkable(rr,cc))}
+function findPath(sr,sc,tr,tc){const start=cellKey(sr,sc),target=cellKey(tr,tc);if(start===target)return [[sr,sc]];const q=[{r:sr,c:sc}];const came=new Map([[start,null]]);while(q.length){q.sort((a,b)=>((Math.abs(a.r-tr)+Math.abs(a.c-tc))-(Math.abs(b.r-tr)+Math.abs(b.c-tc))));const cur=q.shift();for(const [nr,nc] of neighbors(cur.r,cur.c)){const k=cellKey(nr,nc);if(came.has(k))continue;came.set(k,cellKey(cur.r,cur.c));if(k===target){const out=[];let p=k;while(p){const [ar,ac]=p.split(',').map(Number);out.push([ar,ac]);p=came.get(p)}return out.reverse()}q.push({r:nr,c:nc})}}return []}
+function invalidatePaths(){paths.clear()}
+function getPath(e){const sr=Math.floor(e.y/tileSize),sc=Math.floor(e.x/tileSize),k=sr+','+sc;if(!paths.has(k))paths.set(k,findPath(sr,sc,corePos.r,corePos.c));return paths.get(k)||[]}
+class Enemy{
+ constructor(r,c,kind='raider'){this.x=(c+.5)*tileSize;this.y=(r+.5)*tileSize;this.kind=kind;this.maxHp=(12+state.day*7)*(kind==='brute'?1.8:1);this.hp=this.maxHp;this.speed=(kind==='runner'?.78:kind==='brute'?.30:.43)+Math.min(.45,state.day*.012);this.damage=Math.floor(2+state.day*.48)*(kind==='brute'?1.5:1);this.attackCooldown=0;this.reward=8+Math.floor(state.day/2)+(kind==='brute'?8:kind==='runner'?3:0);this.radius=tileSize*(kind==='brute'?.42:.34);this.pathIndex=0}
+ update(dt){if(this.hp<=0)return;this.attackCooldown=Math.max(0,this.attackCooldown-dt);const r=Math.floor(this.y/tileSize),c=Math.floor(this.x/tileSize);if(inside(r,c)){const b=grid[r][c].building;if(b){if(this.attackCooldown<=0){if(b.type==='core'){state.coreHP-=this.damage;flashCell(r,c,'#ef4444');AudioFX.hit();if(state.coreHP<=0){state.coreHP=0;endGame(false)}}else{b.hp-=this.damage;flashCell(r,c,'#ef4444');AudioFX.hit();if(b.hp<=0){grid[r][c].building=null;invalidatePaths();recalcPower();pushText((c+.5)*tileSize,(r+.4)*tileSize,'DESTROYED','#fb7185')}}this.attackCooldown=28; }return;}}
+ const path=getPath(this);if(path.length>1){while(this.pathIndex<path.length&&Math.hypot((path[this.pathIndex][1]+.5)*tileSize-this.x,(path[this.pathIndex][0]+.5)*tileSize-this.y)<tileSize*.22)this.pathIndex++;const p=path[Math.min(this.pathIndex,path.length-1)],tx=(p[1]+.5)*tileSize,ty=(p[0]+.5)*tileSize;const dx=tx-this.x,dy=ty-this.y,d=Math.hypot(dx,dy)||1;this.x+=(dx/d)*this.speed*dt;this.y+=(dy/d)*this.speed*dt}else{const tx=(corePos.c+.5)*tileSize,ty=(corePos.r+.5)*tileSize,dx=tx-this.x,dy=ty-this.y,d=Math.hypot(dx,dy)||1;this.x+=(dx/d)*this.speed*dt;this.y+=(dy/d)*this.speed*dt}}
+ draw(){ctx.save();ctx.translate(ox+this.x,oy+this.y);ctx.rotate(Math.PI/4);ctx.fillStyle=this.kind==='brute'?'#a855f7':this.kind==='runner'?'#eab308':'#94a3b8';ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1.2;ctx.fillRect(-this.radius*.8,-this.radius*.8,this.radius*1.6,this.radius*1.6);ctx.strokeRect(-this.radius*.8,-this.radius*.8,this.radius*1.6,this.radius*1.6);ctx.restore();const hp=clamp(this.hp/this.maxHp,0,1);ctx.fillStyle='#0f172a';ctx.fillRect(ox+this.x-this.radius,oy+this.y-this.radius-7,this.radius*2,3);ctx.fillStyle='#22c55e';ctx.fillRect(ox+this.x-this.radius,oy+this.y-this.radius-7,this.radius*2*hp,3);ctx.fillStyle='#fff';ctx.font='700 8px JetBrains Mono,monospace';ctx.textAlign='center';ctx.fillText(Math.ceil(this.hp),ox+this.x,oy+this.y-this.radius-10)} }
+class Projectile{constructor(x,y,target,damage,color='white',speed=6){this.x=x;this.y=y;this.target=target;this.damage=damage;this.color=color;this.speed=speed;this.life=100}
+ update(dt){if(!this.target||this.target.hp<=0){this.life=0;return}const dx=(this.target.x)-this.x,dy=this.target.y-this.y,d=Math.hypot(dx,dy)||1;this.x+=dx/d*this.speed*tileSize*.10*dt;this.y+=dy/d*this.speed*tileSize*.10*dt;this.life-=dt;if(d<tileSize*.25){this.target.hp-=this.damage;flashCell(Math.floor(this.target.y/tileSize),Math.floor(this.target.x/tileSize),this.color);AudioFX.hit();if(this.target.hp<=0)killEnemy(this.target);this.life=0}}
+ draw(){ctx.fillStyle=this.color;ctx.beginPath();ctx.arc(ox+this.x,oy+this.y,2.3,0,Math.PI*2);ctx.fill();ctx.fillStyle=this.color+'55';ctx.beginPath();ctx.arc(ox+this.x,oy+this.y,5,0,Math.PI*2);ctx.fill()}}
+function killEnemy(e){if(e.hp>0)return;e.hp=0;state.coins+=e.reward;state.kills++;state.score+=e.reward*10;pushText(ox+e.x,oy+e.y-10,'+'+e.reward,'#fde68a');for(let i=0;i<6;i++)particles.push({x:e.x,y:e.y,vx:rand(-.9,.9),vy:rand(-.9,.9),life:20,color:'#facc15'});AudioFX.coin()}
+function flashCell(r,c,color){if(!inside(r,c))return;particles.push({kind:'ring',r,c,life:12,color})}
+function pushText(x,y,t,color){texts.push({x,y,t,color,life:55})}
+function spawnEnemy(){let candidates=[];for(let c=0;c<COLS;c++)if(walkable(0,c))candidates.push(c);if(!candidates.length)for(let c=0;c<COLS;c++)if(grid[1][c].type===0)candidates.push(c);const c=candidates[Math.floor(Math.random()*candidates.length)];let roll=Math.random(),kind=roll<Math.min(.10,state.day*.015)?'brute':roll<.28?'runner':'raider';enemies.push(new Enemy(0,c,kind));state.wave++;}
+function nearestTarget(b,r,c){let best=null,bd=Infinity;for(const e of enemies){if(e.hp<=0)continue;const er=e.y/tileSize,ec=e.x/tileSize;const d=Math.hypot(er-r,ec-c);if(d<=b.range&&d<bd){best=e;bd=d}}return best}
+function updateBuildings(dt){for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const b=grid[r][c].building;if(!b||b.type==='core')continue;if(b.timer>0)b.timer-=dt;if(b.type==='attack'&&b.isPowered&&b.timer<=0){const target=nearestTarget(b,r,c);if(target){projectiles.push(new Projectile((c+.5)*tileSize,(r+.5)*tileSize,target,b.damage,b.color,b.id==='ballista'?3.8:6.5));b.timer=b.cooldown;AudioFX.shoot()}}else if(b.type==='economy'&&b.isPowered&&b.timer<=0){state.coins+=b.income;pushText(ox+(c+.5)*tileSize,oy+(r+.25)*tileSize,'+'+b.income,'#fde68a');b.timer=b.cooldown;AudioFX.coin()}}}
+function clean(){for(let i=enemies.length-1;i>=0;i--)if(enemies[i].hp<=0||enemies[i].x< -tileSize||enemies[i].y>ROWS*tileSize+tileSize)enemies.splice(i,1);for(let i=projectiles.length-1;i>=0;i--)if(projectiles[i].life<=0)projectiles.splice(i,1);for(let i=particles.length-1;i>=0;i--){particles[i].life--;particles[i].x+=(particles[i].vx||0);particles[i].y+=(particles[i].vy||0);if(particles[i].life<=0)particles.splice(i,1)}for(let i=texts.length-1;i>=0;i--){texts[i].life--;texts[i].y-=.25;if(texts[i].life<=0)texts.splice(i,1)}}
+function tick(dt){if(state.paused||state.gameOver)return;const s=state.speed*dt;state.dayTime+=s;state.spawnTimer-=s;if(state.spawnTimer<=0){spawnEnemy();const base=Math.max(35,90-state.day*2.2);state.spawnTimer=state.isNight?base:base*1.45}
+ updateBuildings(s);for(const e of enemies)e.update(s);for(const p of projectiles)p.update(s);clean();if(state.dayTime>=state.dayDuration){state.dayTime-=state.dayDuration;state.day++;state.coins+=20+state.day*4;state.coreHP=clamp(state.coreHP+12,state.coreHP,state.maxCoreHP);state.spawnTimer=10;pushText(ox+COLS*tileSize/2,oy+80,'DAY '+state.day,'#7dd3fc');AudioFX.power();showMessage('รุ่งเช้า! โบนัสเหรียญ + การฟื้นฟู Core',true)}}
+const SAVE_KEY='grid_tactical_defense_save_v2';
+function serialiseGame(){return {version:2,state:{coins:state.coins,gems:state.gems,day:state.day,dayTime:state.dayTime,dayDuration:state.dayDuration,isNight:state.isNight,speed:state.speed,score:state.score,kills:state.kills,coreHP:state.coreHP,maxCoreHP:state.maxCoreHP},buildings:grid.map(row=>row.map(cell=>cell.building?{id:cell.building.id,hp:cell.building.hp}:null))}}
+function saveGame(show=true){try{localStorage.setItem(SAVE_KEY,JSON.stringify(serialiseGame()));if(show)showMessage('บันทึกเกมแล้ว',true);const el=document.getElementById('save-status');if(el)el.textContent='Auto Save: '+new Date().toLocaleTimeString('th-TH');}catch(e){if(show)showMessage('บันทึกไม่ได้ในโหมดนี้',false)}}
+function loadGame(show=true){try{const raw=localStorage.getItem(SAVE_KEY);if(!raw){if(show)showMessage('ยังไม่มี Save',false);return false}const data=JSON.parse(raw);if(!data.state||!Array.isArray(data.buildings))throw new Error('bad save');Object.assign(state,data.state);state.paused=false;state.gameOver=false;enemies.length=0;projectiles.length=0;particles.length=0;texts.length=0;makeGrid();for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const saved=data.buildings[r]?.[c];if(saved&&saved.id&&saved.id!=='core'){const def=BUILDINGS.find(x=>x.id===saved.id);if(def){grid[r][c].building=createInstance(def);grid[r][c].building.hp=clamp(saved.hp,0,def.hp)}}}recalcPower();if(show)showMessage('โหลดเกมแล้ว',true);return true}catch(e){if(show)showMessage('Save เสียหรือใช้ไม่ได้',false);return false}}
+function newGame(){localStorage.removeItem(SAVE_KEY);location.reload()}
+window.addEventListener('beforeunload',()=>saveGame(false));
+setInterval(()=>{if(!state.gameOver)saveGame(false)},5000);
+function draw(){const w=document.getElementById('game-wrapper').clientWidth,h=document.getElementById('game-wrapper').clientHeight;ctx.clearRect(0,0,w,h);drawBackground(w,h);ctx.save();ctx.translate(ox,oy);
+ // power cells first
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const x=c*tileSize,y=r*tileSize,cell=grid[r][c];let base=cell.type===1?'#38414d':cell.type===2?'#18323c':'#1b2029';if(cell.type===0&&powerGrid[r][c])base=state.isNight?'#183142':'#1b2d38';ctx.fillStyle=base;ctx.fillRect(x,y,tileSize+.2,tileSize+.2);if(cell.type===0){ctx.fillStyle=powerGrid[r][c]?'#3f6475':'#303844';ctx.fillRect(x+tileSize*.47,y+tileSize*.47,1.2,1.2)}
+ if(cell.type===1){ctx.strokeStyle='#657080';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x+2,y+tileSize-2);ctx.lineTo(x+tileSize/2,y+3);ctx.lineTo(x+tileSize-2,y+tileSize-2);ctx.stroke();}
+ if(cell.type===2){ctx.strokeStyle='#2e6b74';ctx.beginPath();ctx.moveTo(x+1,y+tileSize*.45);ctx.lineTo(x+tileSize*.4,y+tileSize*.25);ctx.lineTo(x+tileSize*.8,y+tileSize*.45);ctx.lineTo(x+tileSize-1,y+tileSize*.2);ctx.stroke();}
+ ctx.strokeStyle='#0f141d';ctx.strokeRect(x+.2,y+.2,tileSize-.4,tileSize-.4)}
+ // power glow around core
+ ctx.strokeStyle='rgba(56,189,248,.35)';ctx.lineWidth=1;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(powerGrid[r][c]){ctx.strokeStyle='rgba(56,189,248,.05)';ctx.strokeRect(c*tileSize+1,r*tileSize+1,tileSize-2,tileSize-2)}
+ for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(grid[r][c].building)drawBuilding(grid[r][c].building,r,c);
+ // selection hover
+ if(state.hover.r>=0){const {r,c}=state.hover;if(inside(r,c)){ctx.strokeStyle=canBuild(r,c)?'rgba(56,189,248,.95)':'rgba(239,68,68,.85)';ctx.lineWidth=2;ctx.strokeRect(c*tileSize+1,r*tileSize+1,tileSize-2,tileSize-2);}}
+ ctx.restore();for(const p of projectiles)p.draw();for(const e of enemies)e.draw();drawEffects();drawUI();}
+function drawBackground(w,h){ctx.fillStyle=state.isNight?'#070c13':'#111722';ctx.fillRect(0,0,w,h);const grad=ctx.createLinearGradient(0,0,0,h);grad.addColorStop(0,state.isNight?'rgba(30,64,175,.10)':'rgba(245,158,11,.07)');grad.addColorStop(1,'rgba(2,6,23,.22)');ctx.fillStyle=grad;ctx.fillRect(0,0,w,h)}
+function drawBuilding(b,r,c){const x=c*tileSize,y=r*tileSize,cx=x+tileSize/2,cy=y+tileSize/2;ctx.save();if(b.type==='core'){const g=ctx.createRadialGradient(cx,cy,2,cx,cy,tileSize*1.5);g.addColorStop(0,'rgba(251,191,36,.35)');g.addColorStop(1,'rgba(251,191,36,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(cx,cy,tileSize*1.4,0,Math.PI*2);ctx.fill()}
+ ctx.fillStyle=b.type==='core'?'#e59e20':'#111827';ctx.strokeStyle=b.isPowered||b.type==='core'?b.color:'#64748b';ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(x+2,y+2,tileSize-4,tileSize-4,4);ctx.fill();ctx.stroke();ctx.textAlign='center';ctx.textBaseline='middle';ctx.font=(b.type==='core'?'17':'15')+'px sans-serif';ctx.fillStyle='#fff';ctx.fillText(b.symbol,cx,cy+1);if(b.type!=='core'&&!b.isPowered){ctx.fillStyle='#ef4444';ctx.font='700 8px JetBrains Mono';ctx.fillText('NO PWR',cx,y+5)}
+ if(b.type!=='core'){const hp=clamp(b.hp/b.maxHp,0,1);ctx.fillStyle='#0f172a';ctx.fillRect(x+3,y+tileSize-4,tileSize-6,2);ctx.fillStyle=hp>.5?'#22c55e':'#f59e0b';ctx.fillRect(x+3,y+tileSize-4,(tileSize-6)*hp,2)}ctx.restore()}
+function drawEffects(){for(const p of particles){if(p.kind==='ring'){const a=p.life/12;ctx.strokeStyle=p.color;ctx.globalAlpha=a;ctx.lineWidth=2;ctx.beginPath();ctx.arc(ox+(p.c+.5)*tileSize,oy+(p.r+.5)*tileSize,(12-p.life)*1.3,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1}else{ctx.fillStyle=p.color;ctx.globalAlpha=p.life/20;ctx.fillRect(ox+p.x,oy+p.y,2,2);ctx.globalAlpha=1}}for(const t of texts){ctx.fillStyle=t.color;ctx.globalAlpha=t.life/55;ctx.font='800 9px JetBrains Mono,monospace';ctx.textAlign='center';ctx.fillText(t.t,t.x,t.y);ctx.globalAlpha=1}}
+function drawUI(){document.getElementById('ui-coins').textContent=Math.floor(state.coins);document.getElementById('ui-gems').textContent=Math.floor(state.gems);document.getElementById('ui-hp').textContent=Math.ceil(state.coreHP)+'/'+state.maxCoreHP;document.getElementById('ui-day').textContent='DAY '+state.day;const pct=state.dayTime/state.dayDuration;document.getElementById('ui-bar').style.width=(pct*100).toFixed(1)+'%';document.getElementById('ui-pin').style.left='calc('+((pct*100).toFixed(1))+'% - 1px)';state.isNight=pct>.55;const ph=state.isNight?(pct>.78?'NIGHT':'DUSK'):(pct<.22?'DAWN':'DAY');const pt=document.getElementById('ui-phase');pt.textContent=ph;pt.style.color=state.isNight?'#818cf8':'#fbbf24';document.getElementById('btn-speed').textContent='▶ x'+state.speed;document.getElementById('btn-pause').textContent=state.paused?'▶':'Ⅱ';updateHotbar();updateBuildInfo()}
+function updateHotbar(){const root=document.getElementById('hotbar');if(root.childElementCount===BUILDINGS.length)return;root.innerHTML='';BUILDINGS.forEach((b,i)=>{const d=document.createElement('button');d.className='slot';d.innerHTML=`<div class="icon">${b.symbol}</div><div class="key">${b.key}</div><div class="cost">${b.cost} 🪙</div>`;d.addEventListener('pointerdown',e=>{e.preventDefault();AudioFX.init();selectSlot(i)});root.appendChild(d)})
+ for(let i=0;i<BUILDINGS.length;i++){const el=root.children[i];el.classList.toggle('active',i===state.selectedSlot);el.classList.toggle('disabled',state.coins<BUILDINGS[i].cost)}}
+function updateBuildInfo(){const el=document.getElementById('build-info');if(state.selectedBuilding){const b=state.selectedBuilding;el.innerHTML=`<strong>${b.name}</strong> • HP ${Math.ceil(b.hp)}/${b.maxHp}${b.type==='attack'?' • DMG '+b.damage+' • RNG '+b.range.toFixed(1):b.type==='economy'?' • +'+b.income+' coin':''}`;}else{const b=BUILDINGS[state.selectedSlot];el.innerHTML=`เลือก <strong>${b.name}</strong> — ${b.desc}`}}
+function selectSlot(i){if(state.coins<BUILDINGS[i].cost){showMessage('เหรียญไม่พอ',false);return}state.selectedSlot=i;state.selectedBuilding=null;updateHotbar();updateBuildInfo();}
+function canBuild(r,c){if(!inside(r,c))return false;const cell=grid[r][c];if(cell.type!==0||cell.building)return false;return state.coins>=BUILDINGS[state.selectedSlot].cost}
+function placeBuilding(r,c){if(!canBuild(r,c)){showMessage(grid[r][c]?.building?'ช่องนี้มีอาคารแล้ว':state.coins<BUILDINGS[state.selectedSlot].cost?'เหรียญไม่พอ':'สร้างบนพื้นที่นี้ไม่ได้',false);return}const def=BUILDINGS[state.selectedSlot];state.coins-=def.cost;grid[r][c].building=createInstance(def);recalcPower();invalidatePaths();AudioFX.init();AudioFX.build();pushText(ox+(c+.5)*tileSize,oy+(r+.5)*tileSize,'BUILT','#7dd3fc');showMessage(def.name+' สร้างสำเร็จ',true)}
+function screenToCell(clientX,clientY){const rect=canvas.getBoundingClientRect();const x=(clientX-rect.left)-ox,y=(clientY-rect.top)-oy;return {c:Math.floor(x/tileSize),r:Math.floor(y/tileSize)}}
+function inspectCell(r,c){if(!inside(r,c))return;const b=grid[r][c].building;if(!b){state.selectedBuilding=null;return}state.selectedBuilding=b;state.selectedSlot=Math.max(0,BUILDINGS.findIndex(x=>x.id===b.id));showMessage(b.type==='core'?'Power Core: เป้าหมายหลัก — ห้ามให้ HP เป็น 0':b.name+(b.isPowered?' • POWERED':' • NO POWER'),b.isPowered||b.type==='core')}
+canvas.addEventListener('pointermove',e=>{const p=screenToCell(e.clientX,e.clientY);state.hover=inside(p.r,p.c)?p:{r:-1,c:-1}});
+canvas.addEventListener('pointerleave',()=>state.hover={r:-1,c:-1});
+canvas.addEventListener('pointerdown',e=>{if(state.gameOver||state.paused)return;AudioFX.init();const p=screenToCell(e.clientX,e.clientY);if(!inside(p.r,p.c))return;if(grid[p.r][p.c].building)inspectCell(p.r,p.c);else placeBuilding(p.r,p.c);});
+window.addEventListener('keydown',e=>{if(e.key>='1'&&e.key<='4')selectSlot(Number(e.key)-1);if(e.key==='Escape'){state.selectedBuilding=null;closePanels()}if(e.key===' '){state.paused=!state.paused;e.preventDefault()}});
+document.getElementById('btn-speed').addEventListener('click',()=>{state.speed=state.speed===1?2:state.speed===2?3:1;AudioFX.init()});
+document.getElementById('btn-pause').addEventListener('click',()=>{state.paused=!state.paused;AudioFX.init()});
+document.getElementById('btn-menu').addEventListener('click',()=>openPanel('menu-panel'));
+document.getElementById('btn-map').addEventListener('click',()=>{renderMap();openPanel('map-panel')});
+document.getElementById('close-menu').addEventListener('click',closePanels);document.getElementById('close-map').addEventListener('click',closePanels);
+document.getElementById('modal-map').addEventListener('click',()=>{renderMap();document.getElementById('modal').style.display='none';openPanel('map-panel')});
+function openPanel(id){state.paused=true;document.getElementById(id).style.display='flex'}function closePanels(){document.getElementById('menu-panel').style.display='none';document.getElementById('map-panel').style.display='none';if(!state.gameOver)state.paused=false}
+function showMessage(s,good=true){const el=document.getElementById('message');el.textContent=s;el.className=good?'toast-good':'toast-bad';el.style.opacity='1';el.style.transform='translateX(-50%) translateY(0)';clearTimeout(showMessage.t);showMessage.t=setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(-50%) translateY(-8px)'},1400)}
+function endGame(victory){state.gameOver=true;state.paused=true;document.getElementById('modal-title').textContent=victory?'DAY CLEARED':'CORE DESTROYED';document.getElementById('modal-title').style.color=victory?'#22c55e':'#ef4444';document.getElementById('modal-desc').textContent=victory?`คุณผ่าน Day ${state.day} • Kills ${state.kills} • Score ${state.score}`:`ศัตรูบุกถึง Power Core • Day ${state.day} • Kills ${state.kills} • Score ${state.score}`;document.getElementById('modal').style.display='flex'}
+document.getElementById('restart').addEventListener('click',restart);
+function restart(){state.coins=150;state.gems=10;state.day=1;state.dayTime=0;state.isNight=false;state.speed=1;state.paused=false;state.gameOver=false;state.wave=0;state.spawnTimer=45;state.score=0;state.kills=0;state.selectedSlot=0;state.selectedBuilding=null;state.coreHP=100;enemies.length=0;projectiles.length=0;particles.length=0;texts.length=0;makeGrid();document.getElementById('modal').style.display='none';closePanels();showMessage('เริ่มภารกิจใหม่',true)}
+function renderMap(){const w=mapCanvas.clientWidth||340,h=250;mapCanvas.width=Math.floor(w*dpr);mapCanvas.height=Math.floor(h*dpr);mctx.setTransform(dpr,0,0,dpr,0,0);mctx.fillStyle='#081019';mctx.fillRect(0,0,w,h);const s=Math.min((w-20)/COLS,(h-20)/ROWS),mx=(w-COLS*s)/2,my=(h-ROWS*s)/2;for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){const cell=grid[r][c];mctx.fillStyle=cell.type===1?'#475569':cell.type===2?'#164e63':powerGrid[r][c]?'#17354a':'#17202b';mctx.fillRect(mx+c*s,my+r*s,s+.4,s+.4);if(cell.building){mctx.fillStyle=cell.building.type==='core'?'#f59e0b':cell.building.color||'#e2e8f0';mctx.fillRect(mx+c*s+1,my+r*s+1,s-2,s-2)}}for(const e of enemies){const ec=e.x/tileSize,er=e.y/tileSize;mctx.fillStyle='#f43f5e';mctx.fillRect(mx+ec*s-1.5,my+er*s-1.5,3,3)}document.getElementById('map-stats').textContent=`Day ${state.day} • Core ${Math.ceil(state.coreHP)} HP • ศัตรู ${enemies.length} • Kills ${state.kills} • Score ${state.score}`}
+function loop(t){if(!loop.last)loop.last=t;let dt=Math.min(2,(t-loop.last)/16.666);loop.last=t;tick(dt);draw();requestAnimationFrame(loop)}
+resize();
+makeGrid();
+state.spawnTimer=45;
+document.getElementById('save-game')?.addEventListener('click',()=>saveGame(true));
+document.getElementById('load-game')?.addEventListener('click',()=>loadGame(true));
+document.getElementById('new-game')?.addEventListener('click',()=>{if(confirm('เริ่มเกมใหม่และลบ Save นี้?'))newGame()});
+loadGame(false);
+updateHotbar();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
